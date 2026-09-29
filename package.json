@@ -1,0 +1,70 @@
+{
+  "name": "@matdata/sparql-formatter",
+  "version": "1.0.0",
+  "description": "SPARQL 1.2 query and update formatter that keeps your comments where you put them",
+  "keywords": [
+    "sparql",
+    "sparql-1.2",
+    "sparql-star",
+    "rdf",
+    "rdf-star",
+    "formatter",
+    "pretty-print",
+    "prettier",
+    "yasgui",
+    "matgui"
+  ],
+  "homepage": "https://github.com/Matdata-eu/sparql-formatter#readme",
+  "bugs": {
+    "url": "https://github.com/Matdata-eu/sparql-formatter/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Matdata-eu/sparql-formatter.git"
+  },
+  "license": "MIT",
+  "author": "Matdata",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "unpkg": "./dist/spfmt.min.js",
+  "jsdelivr": "./dist/spfmt.min.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./browser": "./dist/spfmt.min.js",
+    "./package.json": "./package.json"
+  },
+  "bin": {
+    "sparql-formatter": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "!dist/**/*.map",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "typecheck": "tsc -p tsconfig.test.json",
+    "test": "node --experimental-strip-types --no-warnings --test \"test/**/*.test.ts\"",
+    "test:dist": "node scripts/smoke-test.mjs",
+    "lint": "prettier --check .",
+    "format": "prettier --write .",
+    "prepublishOnly": "npm run build && npm test && npm run test:dist"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "esbuild": "^0.27.0",
+    "prettier": "^3.8.1",
+    "typescript": "^6.0.3"
+  }
+}

@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SPARQL Formatter</title>
+    <meta
+      name="description"
+      content="Format SPARQL 1.2 queries and updates in your browser. Comments stay where you put them."
+    />
+    <style>
+      :root {
+        --bg: #f7f7f5;
+        --panel: #ffffff;
+        --text: #1d1d1b;
+        --muted: #6b6b66;
+        --border: #deded9;
+        --accent: #1f6feb;
+        --error-bg: #fdecea;
+        --error: #b42318;
+        --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #141413;
+          --panel: #1e1e1c;
+          --text: #ecece8;
+          --muted: #a0a09a;
+          --border: #34342f;
+          --accent: #58a6ff;
+          --error-bg: #3a1d1b;
+          --error: #ffa198;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font:
+          15px/1.5 system-ui,
+          -apple-system,
+          "Segoe UI",
+          sans-serif;
+      }
+      header,
+      main,
+      footer {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 16px;
+      }
+      header h1 {
+        margin: 8px 0 4px;
+        font-size: 22px;
+      }
+      header p {
+        margin: 0;
+        color: var(--muted);
+      }
+      a {
+        color: var(--accent);
+      }
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px 20px;
+        align-items: center;
+        padding: 12px 0;
+      }
+      .controls label {
+        display: inline-flex;
+        gap: 6px;
+        align-items: center;
+        color: var(--muted);
+      }
+      select,
+      input[type="number"],
+      button {
+        font: inherit;
+        color: var(--text);
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 4px 8px;
+      }
+      input[type="number"] {
+        width: 64px;
+      }
+      button.primary {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+        cursor: pointer;
+      }
+      .panes {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+      @media (max-width: 800px) {
+        .panes {
+          grid-template-columns: 1fr;
+        }
+      }
+      .pane h2 {
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--muted);
+        margin: 0 0 6px;
+      }
+      textarea {
+        width: 100%;
+        min-height: 480px;
+        resize: vertical;
+        font: 13px/1.5 var(--mono);
+        color: var(--text);
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 12px;
+        tab-size: 4;
+      }
+      #error {
+        display: none;
+        margin-top: 8px;
+        padding: 8px 12px;
+        border-radius: 6px;
+        background: var(--error-bg);
+        color: var(--error);
+        font-family: var(--mono);
+        font-size: 13px;
+      }
+      footer {
+        color: var(--muted);
+        font-size: 13px;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>SPARQL 1.2 Formatter</h1>
+      <p>
+        Formats SPARQL 1.2 queries and updates, keeping comments where you put them. Runs entirely in your browser.
+        <a href="https://github.com/Matdata-eu/sparql-formatter">GitHub</a> ·
+        <a href="https://www.npmjs.com/package/@matdata/sparql-formatter">npm</a>
+      </p>
+    </header>
+    <main>
+      <div class="controls">
+        <label
+          >Example
+          <select id="example">
+            <option value="">—</option>
+            <option value="basic">SPARQL 1.1 query</option>
+            <option value="comments">Comments</option>
+            <option value="sparql12">SPARQL 1.2 (triple terms, reifiers)</option>
+            <option value="update">Update</option>
+          </select>
+        </label>
+        <label>Indent <input id="indent" type="number" min="0" max="8" value="2" /></label>
+        <label
+          >Keywords
+          <select id="keywordCase">
+            <option value="upper">UPPER</option>
+            <option value="lower">lower</option>
+            <option value="preserve">as written</option>
+          </select>
+        </label>
+        <label
+          >Functions
+          <select id="functionCase">
+            <option value="preserve">as written</option>
+            <option value="upper">UPPER</option>
+            <option value="lower">lower</option>
+          </select>
+        </label>
+        <label><input id="alignPredicates" type="checkbox" checked /> Align predicates</label>
+        <label><input id="preserveBlankLines" type="checkbox" checked /> Keep blank lines</label>
+        <label><input id="compact" type="checkbox" /> Compact</label>
+        <button id="copy" type="button">Copy result</button>
+      </div>
+      <div class="panes">
+        <section class="pane">
+          <h2>Input</h2>
+          <textarea id="input" spellcheck="false" aria-label="SPARQL input"></textarea>
+        </section>
+        <section class="pane">
+          <h2>Formatted</h2>
+          <textarea id="output" spellcheck="false" readonly aria-label="Formatted SPARQL"></textarea>
+          <div id="error" role="alert"></div>
+        </section>
+      </div>
+    </main>
+    <footer>MIT licensed · Made by Matdata</footer>
+
+    <script src="spfmt.min.js"></script>
+    <script>
+      const examples = {
+        basic: `PREFIX foaf:   <http://xmlns.com/foaf/0.1/>
+select ?name (count(?friend) as ?friends) where { ?x foaf:name ?name ; foaf:knows ?friend .
+optional { ?x foaf:mbox ?mbox } filter(lang(?name) = "en") } group by ?name order by desc(?friends) limit 10`,
+        comments: `#comment 1
+select * where {
+graph ?g {
+#comment 2
+}
+?city wdt:P31 wd:Q515; # instance of city
+      wdt:P17 wd:Q31 # in Belgium
+}`,
+        sparql12: `VERSION "1.2"
+PREFIX : <http://example.org/>
+SELECT * WHERE {
+  :alice :knows :bob ~:claim1 {| :source <http://example.org/doc> ; :certainty 0.9 |} .
+  << :bob :age 42 ~ :claim2 >> :statedBy ?who .
+  ?r rdf:reifies <<( ?s :p ?o )>> .
+  FILTER(isTRIPLE(?t) && SUBJECT(?t) = :alice)
+  BIND(STRLANGDIR("hello", "en", "ltr") AS ?greeting)
+}`,
+        update: `PREFIX dc: <http://purl.org/dc/elements/1.1/>
+INSERT DATA { <http://example/book1> dc:title "A new book" ; dc:creator "A.N.Other" . } ;
+WITH <http://example/addresses> DELETE { ?person dc:givenName 'Bill' } INSERT { ?person dc:givenName 'William' } WHERE { ?person dc:givenName 'Bill' }`,
+      };
+
+      const $ = (id) => document.getElementById(id);
+      const input = $("input");
+      const output = $("output");
+      const error = $("error");
+
+      function options() {
+        return {
+          indent: Number($("indent").value),
+          keywordCase: $("keywordCase").value,
+          functionCase: $("functionCase").value,
+          alignPredicates: $("alignPredicates").checked,
+          preserveBlankLines: $("preserveBlankLines").checked,
+          compact: $("compact").checked,
+        };
+      }
+
+      function run() {
+        try {
+          output.value = sparqlFormatter.format(input.value, options());
+          error.style.display = "none";
+        } catch (e) {
+          error.textContent = e.message;
+          error.style.display = "block";
+        }
+      }
+
+      input.addEventListener("input", run);
+      for (const id of ["indent", "keywordCase", "functionCase", "alignPredicates", "preserveBlankLines", "compact"]) {
+        $(id).addEventListener("change", run);
+      }
+      $("example").addEventListener("change", (e) => {
+        if (examples[e.target.value]) {
+          input.value = examples[e.target.value];
+          run();
+        }
+      });
+      $("copy").addEventListener("click", () => navigator.clipboard?.writeText(output.value));
+
+      input.value = examples.sparql12;
+      $("example").value = "sparql12";
+      run();
+    </script>
+  </body>
+</html>
