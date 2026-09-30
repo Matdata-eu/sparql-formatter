@@ -13,10 +13,11 @@ import {
   existsSync,
 } from "node:fs";
 import { join, dirname, relative } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const root = process.argv[2];
 if (!root) throw new Error("Usage: node scripts/import-w3c-tests.mjs <path-to-rdf-tests>");
-const out = new URL("../test/w3c/", import.meta.url).pathname;
+const out = fileURLToPath(new URL("../test/w3c/", import.meta.url));
 
 const POSITIVE = new Set([
   "PositiveSyntaxTest",

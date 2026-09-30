@@ -4,6 +4,7 @@ import { createRequire } from "node:module";
 import { readFileSync, writeFileSync, mkdtempSync } from "node:fs";
 import { execFileSync, spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
+import { fileURLToPath } from "node:url";
 import { join } from "node:path";
 import vm from "node:vm";
 
@@ -30,7 +31,7 @@ assert.equal(sandbox.spfmt.format(query), expected);
 assert.equal(sandbox.sparqlFormatter.format(query, { indent: 4 }).split("\n")[3], "    GRAPH ?g {");
 
 // CLI
-const cli = new URL("../dist/cli.js", import.meta.url).pathname;
+const cli = fileURLToPath(new URL("../dist/cli.js", import.meta.url));
 const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
 assert.equal(execFileSync(process.execPath, [cli, "--version"], { encoding: "utf8" }).trim(), pkg.version);
 assert.equal(execFileSync(process.execPath, [cli], { input: query, encoding: "utf8" }), `${expected}\n`);
