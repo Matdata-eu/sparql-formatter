@@ -124,9 +124,12 @@
         padding: 12px;
         tab-size: 4;
       }
+      #output.stale {
+        opacity: 0.4;
+      }
       #error {
         display: none;
-        margin-top: 8px;
+        margin-bottom: 8px;
         padding: 8px 12px;
         border-radius: 6px;
         background: var(--error-bg);
@@ -155,10 +158,39 @@
           >Example
           <select id="example">
             <option value="">—</option>
-            <option value="basic">SPARQL 1.1 query</option>
-            <option value="comments">Comments</option>
-            <option value="sparql12">SPARQL 1.2 (triple terms, reifiers)</option>
-            <option value="update">Update</option>
+            <optgroup label="Getting started">
+              <option value="minified">Minified one-liner</option>
+              <option value="basic">SELECT with OPTIONAL and FILTER</option>
+              <option value="comments">Comments stay in place</option>
+            </optgroup>
+            <optgroup label="Real-world queries">
+              <option value="wikidata">Wikidata: Belgian cities</option>
+              <option value="era">Railway infrastructure (ERA)</option>
+              <option value="geosparql">GeoSPARQL distance</option>
+              <option value="federated">Federated SERVICE query</option>
+            </optgroup>
+            <optgroup label="SPARQL features">
+              <option value="aggregates">Aggregates and sub-select</option>
+              <option value="paths">Property paths</option>
+              <option value="values">VALUES and BIND</option>
+              <option value="construct">CONSTRUCT</option>
+              <option value="ask">ASK</option>
+              <option value="describe">DESCRIBE</option>
+              <option value="negation">NOT EXISTS, MINUS, UNION</option>
+            </optgroup>
+            <optgroup label="SPARQL 1.2">
+              <option value="sparql12">Triple terms and reifiers</option>
+              <option value="annotations">Annotations</option>
+              <option value="langdir">Language direction</option>
+              <option value="update12">Reification in updates</option>
+            </optgroup>
+            <optgroup label="Updates">
+              <option value="update">INSERT DATA / DELETE-INSERT</option>
+              <option value="graphs">Graph management</option>
+            </optgroup>
+            <optgroup label="Errors">
+              <option value="error">Syntax error</option>
+            </optgroup>
           </select>
         </label>
         <label>Indent <input id="indent" type="number" min="0" max="8" value="2" /></label>
@@ -190,8 +222,8 @@
         </section>
         <section class="pane">
           <h2>Formatted</h2>
-          <textarea id="output" spellcheck="false" readonly aria-label="Formatted SPARQL"></textarea>
           <div id="error" role="alert"></div>
+          <textarea id="output" spellcheck="false" readonly aria-label="Formatted SPARQL"></textarea>
         </section>
       </div>
     </main>
@@ -200,9 +232,12 @@
     <script src="spfmt.min.js"></script>
     <script>
       const examples = {
+        minified: `PREFIX foaf: <http://xmlns.com/foaf/0.1/> select distinct ?person ?name where{?person a foaf:Person;foaf:name ?name.optional{?person foaf:mbox ?mbox}filter(!bound(?mbox))}order by ?name limit 100`,
+
         basic: `PREFIX foaf:   <http://xmlns.com/foaf/0.1/>
 select ?name (count(?friend) as ?friends) where { ?x foaf:name ?name ; foaf:knows ?friend .
 optional { ?x foaf:mbox ?mbox } filter(lang(?name) = "en") } group by ?name order by desc(?friends) limit 10`,
+
         comments: `#comment 1
 select * where {
 graph ?g {
@@ -210,9 +245,110 @@ graph ?g {
 }
 ?city wdt:P31 wd:Q515; # instance of city
       wdt:P17 wd:Q31 # in Belgium
+
+# keep only big cities
+filter(?pop > 100000) # inhabitants
+} # end of query`,
+
+        wikidata: `# Cities in Belgium, largest first
+PREFIX wd: <http://www.wikidata.org/entity/>
+PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+PREFIX wikibase: <http://wikiba.se/ontology#>
+PREFIX bd: <http://www.bigdata.com/rdf#>
+select distinct ?city ?cityLabel (max(?pop) as ?population) ?coord where {
+  ?city wdt:P31/wdt:P279* wd:Q515; # instance of (a subclass of) city
+        wdt:P17 wd:Q31 ;           # country: Belgium
+        wdt:P1082 ?pop .
+  optional { ?city wdt:P625 ?coord }
+  service wikibase:label { bd:serviceParam wikibase:language "nl,fr,en". }
+} group by ?city ?cityLabel ?coord order by desc(?population) limit 50`,
+
+        era: `# Operational points per country in the ERA knowledge graph
+PREFIX era: <http://data.europa.eu/949/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+select ?country (count(distinct ?op) as ?operationalPoints) (sample(?name) as ?example) where {
+?op a era:OperationalPoint ; era:opName ?name ; era:inCountry ?country .
+filter(strlen(?name) > 0)
+} group by ?country having (count(distinct ?op) > 100) order by desc(?operationalPoints)`,
+
+        geosparql: `PREFIX geo: <http://www.opengis.net/ont/geosparql#>
+PREFIX geof: <http://www.opengis.net/def/function/geosparql/>
+PREFIX uom: <http://www.opengis.net/def/uom/OGC/1.0/>
+PREFIX schema: <https://schema.org/>
+SELECT ?station ?name ?distance WHERE {
+  ?station a schema:TrainStation; schema:name ?name; geo:hasGeometry/geo:asWKT ?wkt .
+  BIND("POINT(4.3571 50.8354)"^^geo:wktLiteral AS ?brussels)
+  BIND(geof:distance(?wkt, ?brussels, uom:metre) AS ?distance)
+  FILTER(?distance < 5000)
+} ORDER BY ?distance`,
+
+        federated: `PREFIX owl: <http://www.w3.org/2002/07/owl#>
+PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+PREFIX dbo: <http://dbpedia.org/ontology/>
+SELECT ?city ?population ?abstract WHERE {
+  SERVICE <https://query.wikidata.org/sparql> { ?city wdt:P1082 ?population ; wdt:P17 ?country . VALUES ?country { <http://www.wikidata.org/entity/Q31> } }
+  SERVICE SILENT <https://dbpedia.org/sparql> { ?dbp owl:sameAs ?city ; dbo:abstract ?abstract . FILTER(langMatches(lang(?abstract), "en")) }
 }`,
+
+        aggregates: `PREFIX : <http://example.org/shop/>
+select ?customer (sum(?price * ?qty) as ?total) (group_concat(distinct ?productName; separator=", ") as ?products)
+where {
+  ?order :customer ?customer ; :line ?line .
+  ?line :product ?product ; :quantity ?qty .
+  ?product :price ?price ; :name ?productName .
+  { select ?customer (count(?o) as ?orders) where { ?o :customer ?customer } group by ?customer having (count(?o) >= 3) }
+}
+group by ?customer
+having (sum(?price * ?qty) > 1000)
+order by desc(?total)`,
+
+        paths: `PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+select * where {
+?class rdfs:subClassOf+ <http://example.org/Vehicle> .       # one or more steps
+?person foaf:knows/foaf:knows ?friendOfFriend .                # sequence
+?child ^foaf:parent ?parent .                                  # inverse
+?concept (skos:broader|^skos:narrower)* ?ancestor .            # alternative, zero or more
+?s !(rdf:type|rdfs:label) ?o .                                 # negated property set
+?item rdf:type/rdfs:subClassOf* ?type
+}`,
+
+        values: `PREFIX ex: <http://example.org/>
+select ?book ?title ?price ?discounted where {
+values ?book { ex:book1 ex:book2 ex:book3 }
+?book ex:title ?title ; ex:price ?price .
+optional { ?book ex:discount ?d }
+bind(coalesce(?d, 0) as ?discount)
+bind(round(?price * (1 - ?discount) * 100) / 100 as ?discounted)
+}
+values (?title ?price) { ("SPARQL in Action" undef) (undef 42) }`,
+
+        construct: `PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+PREFIX vcard: <http://www.w3.org/2006/vcard/ns#>
+construct { ?person a vcard:Individual ; vcard:fn ?name ; vcard:hasEmail ?mbox ; vcard:hasAddress [ a vcard:Home ; vcard:locality ?city ] }
+from <http://example.org/people>
+where { ?person foaf:name ?name . optional { ?person foaf:mbox ?mbox } optional { ?person foaf:based_near/foaf:name ?city } }`,
+
+        ask: `PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+ask { ?x foaf:name "Alice" ; foaf:knows [ foaf:name "Bob" ] }`,
+
+        describe: `PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+describe ?person <http://example.org/alice> from <http://example.org/people> where { ?person foaf:knows <http://example.org/alice> } limit 5`,
+
+        negation: `PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+PREFIX ex: <http://example.org/>
+select distinct ?person where {
+{ ?person a foaf:Person } union { ?person a ex:Employee } union { ?person a ex:Contractor }
+filter not exists { ?person ex:status ex:Retired }
+minus { ?person ex:optedOut true }
+filter exists { ?person foaf:mbox ?anyMail }
+}`,
+
         sparql12: `VERSION "1.2"
 PREFIX : <http://example.org/>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 SELECT * WHERE {
   :alice :knows :bob ~:claim1 {| :source <http://example.org/doc> ; :certainty 0.9 |} .
   << :bob :age 42 ~ :claim2 >> :statedBy ?who .
@@ -220,9 +356,46 @@ SELECT * WHERE {
   FILTER(isTRIPLE(?t) && SUBJECT(?t) = :alice)
   BIND(STRLANGDIR("hello", "en", "ltr") AS ?greeting)
 }`,
+
+        annotations: `VERSION "1.2"
+PREFIX : <http://example.org/rail/>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+select ?line ?speed ?from ?source where {
+?line :maxSpeed ?speed {| :validFrom ?from ; :source ?source ; :measuredBy [ a :Survey ; :year ?year ] |} .
+filter(?from >= "2024-01-01"^^xsd:date && ?year > 2020)
+<< ?line :operatedBy ?operator ~ ?contract >> :signedOn ?date .
+}`,
+
+        langdir: `VERSION "1.2"
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+select ?s ?label (langdir(?label) as ?direction) (strlangdir(str(?label), lang(?label), "ltr") as ?ltr) where {
+?s rdfs:label ?label .
+filter(hasLANGDIR(?label) || ?label in ("مرحبا"@ar--rtl, "שלום"@he--rtl))
+}`,
+
+        update12: `VERSION "1.2"
+PREFIX : <http://example.org/>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+insert data { :alice :worksFor :acme ~:employment1 {| :since "2019-04-01"^^xsd:date ; :role "engineer" |} . } ;
+delete { ?r :role ?old } insert { ?r :role "lead engineer" } where { << :alice :worksFor :acme ~ ?r >> :role ?old . }`,
+
         update: `PREFIX dc: <http://purl.org/dc/elements/1.1/>
 INSERT DATA { <http://example/book1> dc:title "A new book" ; dc:creator "A.N.Other" . } ;
 WITH <http://example/addresses> DELETE { ?person dc:givenName 'Bill' } INSERT { ?person dc:givenName 'William' } WHERE { ?person dc:givenName 'Bill' }`,
+
+        graphs: `# Rebuild the staging graph
+drop silent graph <http://example.org/staging> ;
+create graph <http://example.org/staging> ;
+load <http://example.org/dump.ttl> into graph <http://example.org/staging> ;
+copy <http://example.org/production> to <http://example.org/backup> ;
+add graph <http://example.org/staging> to default ;
+clear named`,
+
+        error: `# The object of the second triple is missing
+SELECT * WHERE {
+  ?s ?p ?o .
+  ?s <http://example.org/p>
+}`,
       };
 
       const $ = (id) => document.getElementById(id);
@@ -244,8 +417,11 @@ WITH <http://example/addresses> DELETE { ?person dc:givenName 'Bill' } INSERT { 
       function run() {
         try {
           output.value = sparqlFormatter.format(input.value, options());
+          output.classList.remove("stale");
           error.style.display = "none";
         } catch (e) {
+          // Keep the last good result, dimmed, so the output doesn't flicker while typing.
+          output.classList.add("stale");
           error.textContent = e.message;
           error.style.display = "block";
         }
@@ -258,6 +434,7 @@ WITH <http://example/addresses> DELETE { ?person dc:givenName 'Bill' } INSERT { 
       $("example").addEventListener("change", (e) => {
         if (examples[e.target.value]) {
           input.value = examples[e.target.value];
+          output.value = "";
           run();
         }
       });
