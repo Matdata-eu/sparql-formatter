@@ -1,0 +1,123 @@
+{
+  "name": "matdata-sparql-formatter",
+  "displayName": "Matdata's SPARQL Formatter",
+  "description": "SPARQL 1.2 query and update formatter that keeps your comments where you put them",
+  "version": "1.0.0",
+  "publisher": "matdata",
+  "license": "MIT",
+  "homepage": "https://github.com/Matdata-eu/sparql-formatter/tree/main/vscode#readme",
+  "bugs": {
+    "url": "https://github.com/Matdata-eu/sparql-formatter/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Matdata-eu/sparql-formatter.git",
+    "directory": "vscode"
+  },
+  "categories": [
+    "Formatters",
+    "Linters"
+  ],
+  "keywords": [
+    "sparql",
+    "sparql-1.2",
+    "rdf",
+    "rdf-star",
+    "formatter"
+  ],
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onLanguage:sparql"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "sparql",
+        "aliases": [
+          "SPARQL",
+          "sparql"
+        ],
+        "extensions": [
+          ".rq",
+          ".ru",
+          ".sparql"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "configuration": {
+      "title": "SPARQL Formatter",
+      "properties": {
+        "sparqlFormatter.keywordCase": {
+          "type": "string",
+          "enum": [
+            "upper",
+            "lower",
+            "preserve"
+          ],
+          "default": "upper",
+          "description": "Case of keywords (SELECT, WHERE, OPTIONAL, ...)."
+        },
+        "sparqlFormatter.functionCase": {
+          "type": "string",
+          "enum": [
+            "upper",
+            "lower",
+            "preserve"
+          ],
+          "default": "preserve",
+          "description": "Case of built-in function names (regex, STR, COUNT, ...)."
+        },
+        "sparqlFormatter.alignPredicates": {
+          "type": "boolean",
+          "default": true,
+          "description": "Align the predicates of a subject under its first predicate. When off, indent them instead."
+        },
+        "sparqlFormatter.preserveBlankLines": {
+          "type": "boolean",
+          "default": true,
+          "description": "Keep (at most one) blank line where the query has blank lines between statements."
+        },
+        "sparqlFormatter.compact": {
+          "type": "boolean",
+          "default": false,
+          "description": "Put group patterns with a single triple on one line: OPTIONAL { ?s :p ?o }."
+        },
+        "sparqlFormatter.lineWidth": {
+          "type": "integer",
+          "minimum": 20,
+          "default": 100,
+          "description": "Line width used by compact mode and to wrap long object and VALUES lists."
+        },
+        "sparqlFormatter.insertWhere": {
+          "type": "boolean",
+          "default": true,
+          "description": "Write the optional WHERE keyword of SELECT, CONSTRUCT and DESCRIBE queries."
+        },
+        "sparqlFormatter.validate": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show SPARQL syntax errors in the Problems panel while you type."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "node build.mjs",
+    "typecheck": "tsc -p tsconfig.json",
+    "package": "vsce package",
+    "vscode:prepublish": "node build.mjs --production",
+    "publish": "vsce publish"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.3",
+    "@types/vscode": "1.85.0",
+    "@vscode/vsce": "^4.0.0",
+    "esbuild": "^0.28.2",
+    "ovsx": "^1.2.0",
+    "typescript": "^7.0.2"
+  }
+}

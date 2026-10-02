@@ -59,7 +59,9 @@
     "test:dist": "node scripts/smoke-test.mjs",
     "lint": "prettier --check .",
     "format": "prettier --write .",
-    "prepublishOnly": "npm run build && npm test && npm run test:dist"
+    "prepublishOnly": "npm run build && npm test && npm run test:dist",
+    "vscode:package": "npm --prefix vscode run package",
+    "vscode:publish": "npm --prefix vscode run publish"
   },
   "devDependencies": {
     "@types/node": "^26.6.3",

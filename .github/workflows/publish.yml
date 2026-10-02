@@ -6,6 +6,8 @@ name: Publish to npm
 #
 # Authentication uses npm trusted publishing (OIDC): no npm token is stored in
 # the repository. See "Releasing" in README.md for the one-time npm setup.
+#
+# The same release also publishes the VS Code extension (publish-vscode.yml).
 
 on:
   release:

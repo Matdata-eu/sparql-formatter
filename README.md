@@ -141,6 +141,11 @@ npx @matdata/sparql-formatter --check *.rq      # exit code 1 if a file isn't fo
 Run `sparql-formatter --help` for all options (`--indent`, `--keyword-case`, `--function-case`, `--no-align`,
 `--no-blank-lines`, `--compact`, `--line-width`).
 
+### VS Code
+
+The [`vscode`](vscode) folder contains a VS Code extension (published on Marketplace and Open VSX registry) that formats `.rq`, `.ru` and `.sparql` files with
+**Format Document** and shows syntax errors in the Problems panel. See its [README](vscode/README.md).
+
 ## Options
 
 | Option               | Default      | Description                                                                                      |
