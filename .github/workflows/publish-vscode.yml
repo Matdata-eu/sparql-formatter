@@ -5,9 +5,9 @@ name: Publish VS Code extension
 # (v1.2.3 -> 1.2.3). The Marketplace only accepts major.minor.patch versions, so
 # releases with a pre-release version (v1.3.0-beta.1) are not published here.
 #
-# Secrets (see "Releasing" in vscode/README.md):
-# - VSCE_PAT: Azure DevOps token for the Visual Studio Marketplace (required)
-# - OVSX_PAT: Open VSX token (optional; the Open VSX step is skipped without it)
+# Authentication (see "Releasing" in vscode/README.md):
+# - Visual Studio Marketplace: the VSCE_PAT secret (Azure DevOps token)
+# - Open VSX: trusted publishing (OIDC), no token stored in the repository
 
 on:
   release:
@@ -15,6 +15,7 @@ on:
 
 permissions:
   contents: write # upload the .vsix to the release
+  id-token: write # Open VSX trusted publishing
 
 jobs:
   publish:
@@ -60,14 +61,7 @@ jobs:
         run: npx vsce publish --packagePath "$VSIX"
 
       - name: Publish to Open VSX
-        env:
-          OVSX_PAT: ${{ secrets.OVSX_PAT }}
-        run: |
-          if [ -z "$OVSX_PAT" ]; then
-            echo "OVSX_PAT is not set; skipping Open VSX"
-            exit 0
-          fi
-          npx ovsx publish "$VSIX"
+        run: npx ovsx publish "$VSIX" --trusted-publishing
 
       - name: Attach the extension to the release
         env:
