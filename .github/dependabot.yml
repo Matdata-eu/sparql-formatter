@@ -19,6 +19,10 @@ updates:
         applies-to: security-updates
         patterns: ["*"]
     # Majors stay ungrouped: one PR each, never auto-merged.
+    ignore:
+      # Must stay equal to the minimum VS Code in vscode/package.json
+      # (engines.vscode), otherwise `vsce package` refuses to build.
+      - dependency-name: "@types/vscode"
 
   - package-ecosystem: github-actions
     directory: /

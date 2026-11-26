@@ -113,11 +113,11 @@
     "publish": "vsce publish"
   },
   "devDependencies": {
-    "@types/node": "^26.6.3",
+    "@types/node": "^26.6.11",
     "@types/vscode": "1.85.0",
-    "@vscode/vsce": "^4.0.0",
+    "@vscode/vsce": "^4.1.1",
     "esbuild": "^0.28.2",
-    "ovsx": "^1.2.0",
+    "ovsx": "^1.4.0",
     "typescript": "^7.0.2"
   }
 }
